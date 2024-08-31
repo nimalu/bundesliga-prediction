@@ -2,3 +2,4 @@
 .env
 token
 *.csv
+*.sqlite3
