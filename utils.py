@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def cross_val_splits(df, column="leagueSeason", start=1):
+def cross_val_splits(df, column="season", start=1):
     df = df.reset_index()
     splits = []
     split_test_seasons = []
