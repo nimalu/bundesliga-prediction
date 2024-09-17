@@ -1,6 +1,7 @@
 #!/bin/bash
 
 rm db.sqlite3
+rm -r data
 
 for notebook in ./*.ipynb; do
     START_TIME=$(date +%s)
