@@ -5,3 +5,4 @@ token
 *.sqlite3
 __pycache__
 data
+creds.py
