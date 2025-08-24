@@ -1,8 +1,3 @@
-"""
-Utility functions for football prediction models.
-Extracted from 3_baseline.ipynb to avoid code duplication.
-"""
-
 import numpy as np
 
 
@@ -85,79 +80,21 @@ def compute_kicktipp_points(df_matches, predictions):
     actual_scorelines = df_matches[["home_goals", "away_goals"]].to_numpy()
     points = [
         kicktipp_scoring_rule(actual, pred)
-        for actual, pred in zip(actual_scorelines, predictions)
+        for actual, pred in zip(actual_scorelines, predictions, strict=False)
     ]
     return int(np.sum(points))
 
 
-class BaselineModel:
-    """Simple baseline model using historical scoreline frequencies."""
-
-    def __init__(self, max_goals=4):
-        self.max_goals = max_goals
-
-    def fit(self, df_matches):
-        scorelines = df_matches[["home_goals", "away_goals"]].to_numpy()
-        scorelines = np.clip(scorelines, 0, self.max_goals)
-        counts = np.zeros((self.max_goals + 1, self.max_goals + 1), dtype=int)
-        for hg, ag in scorelines:
-            counts[hg, ag] += 1
-        self.counts_ = counts
-        self.probabilities_ = counts / np.sum(counts)
-
-    def predict_proba(self, df_matches):
-        n = df_matches.shape[0]
-        probabilities = np.broadcast_to(
-            self.probabilities_, (n,) + self.probabilities_.shape
-        )
-        return probabilities
-
-    def predict(self, df_matches):
-        probabilities = self.predict_proba(df_matches)
-        guesses = max_expected_reward_guesses(probabilities, max_goals=self.max_goals)
-        return guesses
-
-
-class CrossValidationResult:
-    """Container for cross-validation results."""
-
-    def __init__(self):
-        self.scores = []
-
-    @property
-    def score_mean(self):
-        return np.mean([score for year, score in self.scores]).item()
-
-    @property
-    def score_std(self):
-        return np.std([score for year, score in self.scores]).item()
-
-    def print_summary(self):
-        print(f"Mean score: {self.score_mean:.1f} ± {self.score_std:.1f}")
-        print(f"Individual scores: {[score for year, score in self.scores]}")
-
-
-def cross_validate_model(model, df_matches, horizon=6):
-    """Cross-validate a model across seasons."""
-    years = df_matches["season"].unique()
-    min_year, max_year = int(np.min(years)), int(np.max(years))
-    result = CrossValidationResult()
-
-    for year in range(min_year + 1, max_year + 1):
-        df_train_cv = df_matches[
-            (df_matches["season"] < year) & (df_matches["season"] >= year - horizon)
-        ]
-        df_test_cv = df_matches[df_matches["season"] == year]
-
-        # Create a fresh model instance for each fold
-        if hasattr(model, "max_goals"):
-            model_cv = type(model)(max_goals=model.max_goals)
-        else:
-            model_cv = type(model)()
-
-        model_cv.fit(df_train_cv)
-        predictions = model_cv.predict(df_test_cv)
-        score = compute_kicktipp_points(df_test_cv, predictions)
-        result.scores.append((year, score))
-
-    return result
+def to_predictions_df(df_matches, predictions):
+    df_predictions = df_matches.copy()
+    df_predictions["home_goals_pred"] = predictions[:, 0]
+    df_predictions["away_goals_pred"] = predictions[:, 1]
+    predictions = df_predictions[["home_goals_pred", "away_goals_pred"]].values
+    labels = df_predictions[["home_goals", "away_goals"]].values
+    kicktipp_scores = np.zeros(len(labels))
+    for i in range(len(predictions)):
+        pred = (predictions[i, 0], predictions[i, 1])
+        ground_truth = (labels[i, 0], labels[i, 1])
+        kicktipp_scores[i] = kicktipp_scoring_rule(ground_truth, pred)
+    df_predictions["score"] = kicktipp_scores
+    return df_predictions

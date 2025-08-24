@@ -22,4 +22,4 @@ fix = true
 line-length = 88
 
 [tool.ruff.lint]
-select = ["I", "F401"]
+select = ["E", "F", "UP", "B", "SIM", "I"]
