@@ -9,8 +9,4 @@ WHALE = "#4a588a"
 GOLD = "#c9c343"
 
 
-MATCH_RESULT = {
-    "host_wins": GRASS,
-    "guest_wins": "#AA5D47",
-    "draw": GRAY
-}
+MATCH_RESULT = {"home_wins": GRASS, "away_wins": "#AA5D47", "draw": GRAY}
